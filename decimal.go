@@ -851,13 +851,13 @@ func (d *Decimal) UnmarshalJSON(decimalBytes []byte) error {
 
 	str, err := unquoteIfQuoted(decimalBytes)
 	if err != nil {
-		return fmt.Errorf("Error decoding string '%s': %s", decimalBytes, err)
+		return &UnmarshalError{str: string(decimalBytes), err: err}
 	}
 
 	decimal, err := NewFromString(str)
 	*d = decimal
 	if err != nil {
-		return fmt.Errorf("Error decoding string '%s': %s", str, err)
+		return &UnmarshalError{str: str, err: err}
 	}
 	return nil
 }
@@ -937,6 +937,17 @@ func (d Decimal) Value() (driver.Value, error) {
 	return d.String(), nil
 }
 
+// UnmarshalError is the error for unmarshal functions
+type UnmarshalError struct {
+	str string
+	err error
+}
+
+// Error implements error interface
+func (err *UnmarshalError) Error() string {
+	return fmt.Sprintf("Error decoding string '%s': %s", err.str, err.err)
+}
+
 // UnmarshalText implements the encoding.TextUnmarshaler interface for XML
 // deserialization.
 func (d *Decimal) UnmarshalText(text []byte) error {
@@ -945,7 +956,7 @@ func (d *Decimal) UnmarshalText(text []byte) error {
 	dec, err := NewFromString(str)
 	*d = dec
 	if err != nil {
-		return fmt.Errorf("Error decoding string '%s': %s", str, err)
+		return &UnmarshalError{str: str, err: err}
 	}
 
 	return nil
